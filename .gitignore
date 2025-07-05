@@ -1,5 +1,35 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.swp
+*.swo
+
 # Fichiers de configuration contenant des secrets
 config.json
+.env
+.env.local
+.env.production
 
 # Environnement virtuel Python
 venv/
@@ -29,19 +59,13 @@ wheels/
 .installed.cfg
 *.egg
 
-# Logs
-*.log
-
 # Fichiers temporaires
 .DS_Store
 Thumbs.db
 
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-
 # Fichiers de sauvegarde
 *~
 *.bak
+
+# Fichiers de données utilisateur
+discord_links.json
