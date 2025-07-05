@@ -4,7 +4,9 @@ import { usePrivy, useWallets } from "@privy-io/react-auth";
 
 interface PaymentData {
   id: string;
+  sender_id: number;
   sender_name: string;
+  recipient_id: number;
   recipient_name: string;
   amount: number;
   currency: string;
@@ -14,6 +16,8 @@ interface PaymentData {
   recipient_chain: string;
   timestamp: string;
   status: string;
+  guild_id: number;
+  channel_id: number;
 }
 
 function PaymentConfirmation() {
@@ -36,24 +40,26 @@ function PaymentConfirmation() {
         throw new Error("ID de paiement manquant");
       }
 
-      // Simuler le chargement depuis pending_payments.json avec données Sepolia
-      const mockPayment: PaymentData = {
-        id: paymentId,
-        sender_name: "keke#7890",
-        recipient_name: "John#1234",
-        amount: 0.1,
-        currency: "ETH",
-        sender_wallet: "0x742d35cc6bf8cf630b4b81a8c7b7d2e4c5b8e9f1",
-        recipient_wallet: "0x8ba1f109551bd432803012645hc3b6c9a8c63932",
-        sender_chain: "Sepolia Testnet",
-        recipient_chain: "Sepolia Testnet",
-        timestamp: new Date().toISOString(),
-        status: "pending",
-      };
+      console.log("🔍 Chargement du paiement:", paymentId);
 
-      setPayment(mockPayment);
+      // Récupérer les données réelles depuis le serveur
+      const response = await fetch(`/api/payment/${paymentId}`);
+
+      console.log("📡 Réponse API:", response.status, response.statusText);
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error("Paiement non trouvé ou expiré");
+        }
+        throw new Error(`Erreur ${response.status}: ${response.statusText}`);
+      }
+
+      const paymentData = await response.json();
+      console.log("✅ Données reçues:", paymentData);
+      setPayment(paymentData);
     } catch (err) {
-      setError("Paiement non trouvé ou expiré");
+      console.error("❌ Erreur chargement paiement:", err);
+      setError(err instanceof Error ? err.message : "Erreur inconnue");
     } finally {
       setLoading(false);
     }
@@ -63,9 +69,36 @@ function PaymentConfirmation() {
     if (!payment || !authenticated) return;
 
     setConfirming(true);
+    setError(null);
+
     try {
-      // Simuler la confirmation du paiement
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      console.log("🔄 Confirmation du paiement:", payment.id);
+
+      // Mettre à jour le statut du paiement
+      const response = await fetch(`/api/payment/${payment.id}/confirm`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          user_id: user?.id,
+          confirmed_at: new Date().toISOString(),
+        }),
+      });
+
+      console.log(
+        "📡 Réponse confirmation:",
+        response.status,
+        response.statusText
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.error || `Erreur ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log("✅ Confirmation réussie:", result);
 
       setPayment({ ...payment, status: "completed" });
 
@@ -74,7 +107,12 @@ function PaymentConfirmation() {
         navigate("/success");
       }, 2000);
     } catch (err) {
-      setError("Erreur lors de la confirmation du paiement");
+      console.error("❌ Erreur confirmation:", err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Erreur lors de la confirmation du paiement"
+      );
     } finally {
       setConfirming(false);
     }
