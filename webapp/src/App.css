@@ -79,3 +79,162 @@ button:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(100, 108, 255, 0.4);
 }
+
+.payment-details {
+  margin: 20px 0;
+  text-align: left;
+}
+
+.payment-info {
+  background: rgba(100, 108, 255, 0.1);
+  padding: 15px;
+  border-radius: 8px;
+  margin: 10px 0;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  margin: 8px 0;
+  padding: 5px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.info-row:last-child {
+  border-bottom: none;
+}
+
+.amount {
+  font-weight: bold;
+  color: #646cff;
+  font-size: 1.1em;
+}
+
+.info-row .amount {
+  color: #22c55e;
+}
+
+.testnet-warning + .payment-details .amount {
+  color: #f59e0b;
+}
+
+.wallet-details {
+  margin: 20px 0;
+}
+
+.wallet-address {
+  margin: 10px 0;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 6px;
+}
+
+.wallet-address code {
+  word-break: break-all;
+  font-size: 0.9em;
+}
+
+.user-wallets {
+  margin: 20px 0;
+}
+
+.wallet-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px;
+  margin: 5px 0;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+.confirmation-actions {
+  display: flex;
+  gap: 15px;
+  margin: 25px 0;
+}
+
+.confirm-button {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  flex: 1;
+}
+
+.cancel-button {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  flex: 1;
+}
+
+.warning {
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  padding: 15px;
+  border-radius: 8px;
+  margin: 20px 0;
+  font-size: 0.9em;
+}
+
+.success-page {
+  text-align: center;
+}
+
+.success-icon {
+  font-size: 4em;
+  margin: 20px 0;
+}
+
+.success-details {
+  text-align: left;
+  margin: 20px 0;
+}
+
+.success-details ul {
+  list-style: none;
+  padding: 0;
+}
+
+.success-details li {
+  padding: 5px 0;
+}
+
+.next-steps {
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  padding: 15px;
+  border-radius: 8px;
+  margin: 20px 0;
+}
+
+.auto-redirect {
+  color: #888;
+  font-size: 0.9em;
+  margin-top: 20px;
+}
+
+.success-message {
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  padding: 20px;
+  border-radius: 8px;
+  margin: 20px 0;
+}
+
+.testnet-warning {
+  background: rgba(239, 68, 68, 0.1);
+  border: 2px solid rgba(239, 68, 68, 0.5);
+  padding: 15px;
+  border-radius: 8px;
+  margin: 20px 0;
+  text-align: center;
+}
+
+.testnet-warning h3 {
+  color: #ef4444;
+  margin: 0 0 10px 0;
+  font-size: 1.2em;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
