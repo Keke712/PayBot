@@ -16,22 +16,23 @@ function Success() {
   return (
     <div className="card success-page">
       <div className="success-icon">✅</div>
-      <h2>Paiement Confirmé!</h2>
-      <p>Votre demande de paiement a été confirmée avec succès.</p>
+      <h2>Paiement Exécuté!</h2>
+      <p>Votre transaction a été envoyée avec succès via Privy.</p>
 
       <div className="success-details">
-        <h3>🎉 Étapes suivantes:</h3>
+        <h3>🎉 Transaction terminée:</h3>
         <ul>
-          <li>✅ Demande de paiement enregistrée</li>
-          <li>🔄 Notification envoyée au destinataire</li>
-          <li>💼 Transaction à finaliser via votre wallet</li>
+          <li>✅ Transaction envoyée sur la blockchain</li>
+          <li>✅ Confirmée via Privy</li>
+          <li>✅ Fonds transférés au destinataire</li>
+          <li>🔄 En cours de confirmation sur le réseau</li>
         </ul>
       </div>
 
       <div className="next-steps">
         <p>
-          💡 <strong>Conseil:</strong> Utilisez votre wallet externe pour
-          effectuer la transaction réelle vers l'adresse indiquée.
+          💡 <strong>Fait!</strong> Votre paiement a été traité automatiquement
+          par Privy. La transaction est maintenant visible sur la blockchain.
         </p>
       </div>
 

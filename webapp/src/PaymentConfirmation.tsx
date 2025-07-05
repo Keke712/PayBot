@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { usePrivy, useWallets } from "@privy-io/react-auth";
+import { usePrivy, useWallets, useSendTransaction } from "@privy-io/react-auth";
 
 interface PaymentData {
   id: string;
@@ -18,6 +18,7 @@ interface PaymentData {
   status: string;
   guild_id: number;
   channel_id: number;
+  transaction_hash?: string; // Add this property
 }
 
 function PaymentConfirmation() {
@@ -25,10 +26,12 @@ function PaymentConfirmation() {
   const navigate = useNavigate();
   const { authenticated, user, login } = usePrivy();
   const { wallets } = useWallets();
+  const { sendTransaction } = useSendTransaction();
   const [payment, setPayment] = useState<PaymentData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [confirming, setConfirming] = useState(false);
+  const [executing, setExecuting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [transactionHash, setTransactionHash] = useState<string | null>(null);
 
   useEffect(() => {
     loadPaymentData();
@@ -65,56 +68,137 @@ function PaymentConfirmation() {
     }
   };
 
-  const confirmPayment = async () => {
-    if (!payment || !authenticated) return;
+  const executeTransaction = async () => {
+    if (!payment || !authenticated || !wallets.length) return;
 
-    setConfirming(true);
+    setExecuting(true);
     setError(null);
 
     try {
-      console.log("🔄 Confirmation du paiement:", payment.id);
+      console.log(
+        "🔄 Exécution de la transaction via Privy intégration directe..."
+      );
 
-      // Mettre à jour le statut du paiement
-      const response = await fetch(`/api/payment/${payment.id}/confirm`, {
+      // Trouver le wallet de l'expéditeur
+      const senderWallet = wallets.find(
+        (w) => w.address.toLowerCase() === payment.sender_wallet.toLowerCase()
+      );
+
+      if (!senderWallet) {
+        console.log(
+          "❌ Wallets disponibles:",
+          wallets.map((w) => ({ address: w.address, type: w.walletClientType }))
+        );
+        throw new Error(
+          `Wallet expéditeur ${payment.sender_wallet} non trouvé dans vos wallets Privy connectés.`
+        );
+      }
+
+      console.log("✅ Wallet expéditeur trouvé:", {
+        address: senderWallet.address,
+        type: senderWallet.walletClientType,
+      });
+
+      // Calculer la valeur en Wei
+      const amountInWei = BigInt(
+        Math.floor(parseFloat(String(payment.amount)) * 1e18)
+      );
+
+      console.log("💰 Détails de la transaction:");
+      console.log("  Montant:", payment.amount, "ETH");
+      console.log("  Montant en Wei:", amountInWei.toString());
+      console.log("  De:", payment.sender_wallet);
+      console.log("  Vers:", payment.recipient_wallet);
+
+      // Utiliser Privy's sendTransaction hook directement
+      console.log("📤 Envoi de la transaction via Privy sendTransaction...");
+
+      const txResult = await sendTransaction({
+        to: payment.recipient_wallet,
+        value: amountInWei.toString(),
+        // Privy gère automatiquement le réseau et la signature
+      });
+
+      // Extraire le hash de la transaction
+      const txHash = typeof txResult === "string" ? txResult : txResult.hash;
+
+      console.log("✅ Transaction envoyée avec succès:", txHash);
+      setTransactionHash(txHash);
+
+      // Mettre à jour le statut du paiement côté serveur
+      console.log("📡 Mise à jour du statut...");
+      const updateResponse = await fetch(`/api/payment/${payment.id}/confirm`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
           user_id: user?.id,
+          transaction_hash: txHash,
           confirmed_at: new Date().toISOString(),
+          wallet_type: senderWallet.walletClientType,
+          executed_via: "privy_direct",
         }),
       });
 
-      console.log(
-        "📡 Réponse confirmation:",
-        response.status,
-        response.statusText
-      );
+      if (updateResponse.ok) {
+        const result = await updateResponse.json();
+        console.log("✅ Statut mis à jour côté serveur:", result);
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(errorData?.error || `Erreur ${response.status}`);
+        setPayment({
+          ...payment,
+          status: "completed",
+          transaction_hash: txHash,
+        });
+
+        // Rediriger vers la page de succès
+        setTimeout(() => {
+          navigate("/success");
+        }, 2000);
+      } else {
+        console.warn("⚠️ Erreur mise à jour serveur, mais transaction envoyée");
+        // Même si la mise à jour serveur échoue, la transaction a été envoyée
+        setPayment({
+          ...payment,
+          status: "completed",
+          transaction_hash: txHash,
+        });
+
+        setTimeout(() => {
+          navigate("/success");
+        }, 2000);
+      }
+    } catch (err: unknown) {
+      console.error("❌ Erreur lors de la transaction:", err);
+
+      // Gestion des erreurs Privy
+      let errorMessage = "Erreur lors de l'envoi de la transaction";
+
+      if (err instanceof Error) {
+        errorMessage = err.message;
+      } else if (typeof err === "string") {
+        errorMessage = err;
+      } else if (err && typeof err === "object") {
+        errorMessage = (err as any).message || errorMessage;
       }
 
-      const result = await response.json();
-      console.log("✅ Confirmation réussie:", result);
+      // Messages d'erreur spécifiques
+      if (
+        errorMessage.includes("User rejected") ||
+        errorMessage.includes("rejected")
+      ) {
+        errorMessage = "Transaction annulée par l'utilisateur";
+      } else if (errorMessage.includes("insufficient funds")) {
+        errorMessage = "Fonds insuffisants pour effectuer la transaction";
+      } else if (errorMessage.includes("network")) {
+        errorMessage = "Problème de réseau - vérifiez votre connexion";
+      } else if (errorMessage.includes("gas")) {
+        errorMessage = "Erreur de gaz - la transaction a échoué";
+      }
 
-      setPayment({ ...payment, status: "completed" });
-
-      // Rediriger après confirmation
-      setTimeout(() => {
-        navigate("/success");
-      }, 2000);
-    } catch (err) {
-      console.error("❌ Erreur confirmation:", err);
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Erreur lors de la confirmation du paiement"
-      );
+      setError(errorMessage);
     } finally {
-      setConfirming(false);
+      setExecuting(false);
     }
   };
 
@@ -165,17 +249,41 @@ function PaymentConfirmation() {
       {payment.status === "completed" ? (
         <div className="success-message">
           <h3>✅ Paiement confirmé avec succès!</h3>
-          <p>La transaction a été enregistrée et sera traitée.</p>
+          <p>La transaction a été exécutée sur la blockchain via Privy.</p>
+          {transactionHash && (
+            <div className="transaction-details">
+              <p>
+                <strong>Hash de transaction:</strong>
+              </p>
+              <code>{transactionHash}</code>
+              <br />
+              <a
+                href={`https://sepolia.etherscan.io/tx/${transactionHash}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ marginTop: "10px", display: "inline-block" }}
+              >
+                🔗 Voir sur Etherscan
+              </a>
+            </div>
+          )}
         </div>
       ) : (
         <>
-          {(payment.sender_chain.includes("Sepolia") ||
-            payment.recipient_chain.includes("Sepolia")) && (
-            <div className="testnet-warning">
-              <h3>🚨 RÉSEAU DE TEST SEPOLIA</h3>
+          {/* Affichage du hash de transaction en cours */}
+          {transactionHash && (
+            <div className="transaction-pending">
+              <h4>🔄 Transaction en cours...</h4>
               <p>
-                Cette transaction utilise des ETH de test sans valeur réelle.
+                <strong>Hash:</strong> <code>{transactionHash}</code>
               </p>
+              <a
+                href={`https://sepolia.etherscan.io/tx/${transactionHash}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                🔗 Suivre sur Etherscan
+              </a>
             </div>
           )}
 
@@ -222,11 +330,18 @@ function PaymentConfirmation() {
 
             {wallets.length > 0 && (
               <div className="user-wallets">
-                <h4>🔗 Vos wallets connectés:</h4>
+                <h4>🔗 Vos wallets Privy connectés:</h4>
                 {wallets.map((wallet, index) => (
                   <div key={index} className="wallet-item">
                     <code>{wallet.address}</code>
                     <span>({wallet.walletClientType})</span>
+                    {wallet.address.toLowerCase() ===
+                      payment.sender_wallet.toLowerCase() && (
+                      <span style={{ color: "#22c55e", fontWeight: "bold" }}>
+                        {" "}
+                        ✅ Expéditeur
+                      </span>
+                    )}
                   </div>
                 ))}
               </div>
@@ -235,11 +350,11 @@ function PaymentConfirmation() {
 
           <div className="confirmation-actions">
             <button
-              onClick={confirmPayment}
-              disabled={confirming}
+              onClick={executeTransaction}
+              disabled={executing}
               className="confirm-button"
             >
-              {confirming ? "🔄 Confirmation..." : "✅ Confirmer le paiement"}
+              {executing ? "🔄 Envoi via Privy..." : "💸 Envoyer le paiement"}
             </button>
 
             <button onClick={() => navigate("/")} className="cancel-button">
@@ -249,18 +364,40 @@ function PaymentConfirmation() {
 
           <div className="warning">
             <p>
-              ⚠️ <strong>Important:</strong> Cette action confirmera la demande
-              de paiement. La transaction réelle devra être effectuée via votre
-              wallet externe.
+              ⚠️ <strong>Important:</strong> Cette action enverra réellement{" "}
+              {payment.amount} {payment.currency} de votre wallet Privy vers le
+              destinataire. Assurez-vous d'avoir suffisamment de fonds.
+            </p>
+            <p>
+              🔐 <strong>Privy:</strong> La transaction sera exécutée
+              directement via l'intégration Privy. Aucune configuration externe
+              n'est requise.
             </p>
             {payment.sender_chain.includes("Sepolia") && (
               <p>
-                🚨 <strong>Testnet:</strong> Assurez-vous que votre wallet est
-                connecté au réseau Sepolia.
+                🚨 <strong>Testnet:</strong> Cette transaction utilisera le
+                réseau Sepolia Testnet avec des ETH de test.
               </p>
             )}
           </div>
         </>
+      )}
+
+      {error && (
+        <div
+          className="error-message"
+          style={{
+            background: "rgba(239, 68, 68, 0.1)",
+            border: "1px solid rgba(239, 68, 68, 0.3)",
+            padding: "15px",
+            borderRadius: "8px",
+            margin: "20px 0",
+            color: "#ef4444",
+          }}
+        >
+          <h4>❌ Erreur</h4>
+          <p>{error}</p>
+        </div>
       )}
     </div>
   );

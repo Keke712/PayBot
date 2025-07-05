@@ -238,3 +238,42 @@ button:hover {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.7; }
 }
+
+.error-message {
+  margin: 20px 0;
+  text-align: left;
+}
+
+.error-message h4 {
+  margin: 0 0 10px 0;
+  font-size: 1.1em;
+}
+
+.error-message p {
+  margin: 0;
+  line-height: 1.4;
+}
+
+.transaction-pending {
+  margin: 20px 0;
+  text-align: center;
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  padding: 15px;
+  border-radius: 8px;
+}
+
+.transaction-pending h4 {
+  margin: 0 0 10px 0;
+  color: #f59e0b;
+}
+
+.transaction-pending code {
+  word-break: break-all;
+  font-size: 0.8em;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 5px 8px;
+  border-radius: 4px;
+  display: inline-block;
+  margin: 5px 0;
+}
