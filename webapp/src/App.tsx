@@ -1,8 +1,12 @@
 import { PrivyProvider } from "@privy-io/react-auth";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import Header from "./components/Header";
 import WalletInterface from "./WalletInterface.tsx";
 import PaymentConfirmation from "./PaymentConfirmation";
 import Success from "./Success";
+import LinkAccounts from "./components/LinkAccounts";
+import SendCrypto from "./components/SendCrypto";
+import ReceiveCrypto from "./components/ReceiveCrypto";
 import "./App.css";
 
 function App() {
@@ -11,14 +15,14 @@ function App() {
       appId={import.meta.env.VITE_PRIVY_APP_ID || "cmcpc3pra00qbjp0maxxqbqcs"}
       config={{
         appearance: {
-          theme: "dark",
-          accentColor: "#646cff",
+          theme: "light",
+          accentColor: "#2563eb",
         },
         embeddedWallets: {
           createOnLogin: "users-without-wallets",
         },
         defaultChain: {
-          id: 11155111, // Sepolia testnet
+          id: 11155111, // Sepolia testnet as default
           name: "Sepolia",
           network: "sepolia",
           nativeCurrency: {
@@ -95,7 +99,7 @@ function App() {
     >
       <Router>
         <div>
-          <h1>PayBot Dashboard</h1>
+          <Header title="PayBot Dashboard" />
           <Routes>
             <Route path="/" element={<WalletInterface />} />
             <Route
@@ -103,6 +107,9 @@ function App() {
               element={<PaymentConfirmation />}
             />
             <Route path="/success" element={<Success />} />
+            <Route path="/link-accounts" element={<LinkAccounts />} />
+            <Route path="/send" element={<SendCrypto />} />
+            <Route path="/receive" element={<ReceiveCrypto />} />
           </Routes>
         </div>
       </Router>

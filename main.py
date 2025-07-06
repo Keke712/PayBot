@@ -5,39 +5,38 @@ import aiohttp
 import asyncio
 from datetime import datetime
 from web3 import Web3
-from web3.exceptions import Web3Exception
 import uuid
 import os
 
 
-# Fonction pour charger la configuration
+# Function to load configuration
 def load_config():
-    """Charge la configuration depuis le fichier config.json"""
+    """Load configuration from config.json file"""
     try:
         with open('config.json', 'r') as f:
             return json.load(f)
     except FileNotFoundError:
-        print("❌ Fichier config.json non trouvé!")
-        print("📝 Créez un fichier config.json avec vos tokens:")
+        print("❌ config.json file not found!")
+        print("📝 Create a config.json file with your tokens:")
         print(
-            '{\n  "discord_token": "VOTRE_TOKEN_DISCORD",\n  "privy_app_id": "VOTRE_PRIVY_APP_ID",\n  "privy_app_secret": "VOTRE_PRIVY_APP_SECRET"\n}')
+            '{\n  "discord_token": "YOUR_DISCORD_TOKEN",\n  "privy_app_id": "YOUR_PRIVY_APP_ID",\n  "privy_app_secret": "YOUR_PRIVY_APP_SECRET"\n}')
         exit(1)
     except json.JSONDecodeError:
-        print("❌ Erreur dans le fichier config.json - format JSON invalide!")
+        print("❌ Error in config.json file - invalid JSON format!")
         exit(1)
 
 
-# Charger la configuration
+# Load configuration
 config = load_config()
 
-# Configuration des intents (permissions du bot)
+# Configure intents (bot permissions)
 intents = discord.Intents.default()
 intents.message_content = True
 
-# Créer une instance du bot avec le préfixe '$'
+# Create bot instance with '$' prefix
 bot = commands.Bot(command_prefix='$', intents=intents)
 
-# Configuration des réseaux avec RPC publics gratuits
+# Network configuration with free public RPCs
 NETWORKS = {
     'sepolia': {
         'name': 'Sepolia Testnet',
@@ -75,9 +74,9 @@ class Web3Manager:
         self.connections = {}
 
     def get_web3(self, network='sepolia'):
-        """Obtient une connexion Web3 pour un réseau donné avec fallback sur plusieurs RPC"""
+        """Get a Web3 connection for a given network with fallback to multiple RPCs"""
         if network not in self.connections:
-            # Essayer le RPC principal
+            # Try primary RPC
             primary_rpc = NETWORKS[network]['rpc_url']
             try:
                 w3 = Web3(Web3.HTTPProvider(primary_rpc))
@@ -85,30 +84,30 @@ class Web3Manager:
                     self.connections[network] = w3
                     return w3
                 else:
-                    print(f"⚠️ RPC principal {primary_rpc} non disponible, essai des alternatives...")
+                    print(f"⚠️ Primary RPC {primary_rpc} unavailable, trying alternatives...")
             except Exception as e:
-                print(f"⚠️ Erreur RPC principal {primary_rpc}: {e}")
+                print(f"⚠️ Primary RPC error {primary_rpc}: {e}")
 
-            # Essayer les RPC alternatifs
+            # Try alternative RPCs
             if 'rpc_alternatives' in NETWORKS[network]:
                 for rpc_url in NETWORKS[network]['rpc_alternatives']:
                     try:
                         w3 = Web3(Web3.HTTPProvider(rpc_url))
                         if w3.is_connected():
-                            print(f"✅ Connexion réussie avec {rpc_url}")
+                            print(f"✅ Successfully connected with {rpc_url}")
                             self.connections[network] = w3
                             return w3
                     except Exception as e:
-                        print(f"⚠️ Erreur RPC alternatif {rpc_url}: {e}")
+                        print(f"⚠️ Alternative RPC error {rpc_url}: {e}")
                         continue
 
-            print(f"❌ Impossible de se connecter au réseau {network}")
+            print(f"❌ Unable to connect to {network} network")
             return None
 
         return self.connections[network]
 
     def is_connected(self, network='sepolia'):
-        """Vérifie si la connexion Web3 est active"""
+        """Check if Web3 connection is active"""
         w3 = self.get_web3(network)
         if w3:
             try:
@@ -124,7 +123,7 @@ class PrivyAPI:
         self.app_secret = app_secret
         self.base_url = "https://auth.privy.io"
         self.session = None
-        # Configurer les headers qui fonctionnent
+        # Configure headers that work
         import base64
         credentials = base64.b64encode(f"{self.app_id}:{self.app_secret}".encode()).decode()
         self.headers = {
@@ -134,13 +133,13 @@ class PrivyAPI:
         }
 
     async def get_session(self):
-        """Crée une session HTTP si elle n'existe pas"""
+        """Create HTTP session if it doesn't exist"""
         if self.session is None:
             self.session = aiohttp.ClientSession()
         return self.session
 
     async def get_user_by_discord_id(self, discord_id):
-        """Recherche un utilisateur Privy par son ID Discord"""
+        """Search for a Privy user by Discord ID"""
         session = await self.get_session()
 
         try:
@@ -150,7 +149,7 @@ class PrivyAPI:
                     result = await response.json()
                     users = result.get('data', [])
 
-                    # Chercher un utilisateur avec le Discord ID correspondant
+                    # Search for user with matching Discord ID
                     for user in users:
                         linked_accounts = user.get('linked_accounts', [])
                         for account in linked_accounts:
@@ -158,16 +157,16 @@ class PrivyAPI:
                                     account.get('subject') == str(discord_id)):
                                 return user
 
-                    return None  # Aucun utilisateur trouvé
+                    return None  # No user found
                 else:
-                    print(f"❌ Erreur lors de la recherche utilisateur: {response.status}")
+                    print(f"❌ Error searching user: {response.status}")
                     return None
         except Exception as e:
-            print(f"❌ Erreur recherche utilisateur: {e}")
+            print(f"❌ User search error: {e}")
             return None
 
     async def get_user_wallets(self, user_data):
-        """Extrait les wallets depuis les données utilisateur"""
+        """Extract wallets from user data"""
         try:
             wallets = []
             linked_accounts = user_data.get('linked_accounts', [])
@@ -184,80 +183,73 @@ class PrivyAPI:
 
             return {'wallets': wallets} if wallets else None
         except Exception as e:
-            print(f"❌ Erreur extraction wallets: {e}")
+            print(f"❌ Wallet extraction error: {e}")
             return None
 
     async def close(self):
-        """Ferme la session HTTP"""
+        """Close HTTP session"""
         if self.session:
             await self.session.close()
 
 
-# Initialiser l'API Privy et Web3Manager
+# Initialize Privy API and Web3Manager
 privy_api = PrivyAPI(config['privy_app_id'], config['privy_app_secret'])
 web3_manager = Web3Manager()
 
 
-# Événement déclenché quand le bot est prêt
+# Event triggered when bot is ready
 @bot.event
 async def on_ready():
-    print(f'✅ Bot connecté en tant que {bot.user.name}!')
-    print(f'🆔 ID du bot: {bot.user.id}')
-    print(f'🌐 Le bot est présent sur {len(bot.guilds)} serveur(s)')
+    print(f'✅ Bot connected as {bot.user.name}!')
+    print(f'🆔 Bot ID: {bot.user.id}')
+    print(f'🌐 Bot is present on {len(bot.guilds)} server(s)')
 
-    # Vérifier les connexions Web3
+    # Check Web3 connections
     for network in NETWORKS:
         if web3_manager.is_connected(network):
-            print(f'✅ Connexion {NETWORKS[network]["name"]} active')
+            print(f'✅ {NETWORKS[network]["name"]} connection active')
         else:
-            print(f'❌ Connexion {NETWORKS[network]["name"]} échouée')
+            print(f'❌ {NETWORKS[network]["name"]} connection failed')
 
     print('------')
 
 
-# Commande $hello
-@bot.command(name='hello')
-async def hello_command(ctx):
-    """Commande qui salue l'utilisateur"""
-    await ctx.reply(f'Salut {ctx.author.mention} ! 👋 Comment ça va ?')
-
-
-# Commande $wallet
+# $wallet command
 @bot.command(name='wallet')
 async def wallet_command(ctx):
-    """Récupère les informations de wallet de l'utilisateur depuis Privy"""
+    """Retrieve user's wallet information from Privy"""
 
-    # Message de chargement
-    loading_msg = await ctx.send("🔍 Recherche de vos informations de wallet...")
+    # Loading message
+    loading_msg = await ctx.send("🔍 Searching for your wallet information...")
 
     try:
-        # Récupérer l'utilisateur Discord
+        # Get Discord user
         discord_user_id = ctx.author.id
 
-        # Rechercher l'utilisateur dans Privy
+        # Search user in Privy
         user_data = await privy_api.get_user_by_discord_id(discord_user_id)
 
         if not user_data:
-            await loading_msg.edit(content="❌ Aucun compte Privy trouvé lié à votre Discord.\n"
-                                           "Connectez-vous d'abord sur notre application avec Discord.")
+            await loading_msg.edit(content="❌ No Privy account found linked to your Discord.\n"
+                                           "Please connect first on our application with Discord.")
             return
 
-        # Extraire les wallets depuis les données utilisateur
+        # Extract wallets from user data
         wallets_data = await privy_api.get_user_wallets(user_data)
 
         if not wallets_data or not wallets_data.get('wallets'):
-            await loading_msg.edit(content="❌ Aucun wallet trouvé pour votre compte.")
+            await loading_msg.edit(content="❌ No wallet found for your account.")
             return
 
-        # Formater les informations des wallets
+        # Format wallet information
         embed = discord.Embed(
-            title="💰 Vos Wallets",
-            description=f"Informations pour {ctx.author.mention}",
+            title="💰 Your Wallets",
+            description=f"Information for {ctx.author.mention}",
             color=0x00ff00,
             timestamp=datetime.now()
         )
 
-        # Informations utilisateur
+        # User information
         discord_account = None
         for account in user_data.get('linked_accounts', []):
             if account.get('type') == 'discord_oauth':
@@ -266,27 +258,27 @@ async def wallet_command(ctx):
 
         if discord_account:
             embed.add_field(
-                name="🔗 Compte Discord lié",
+                name="🔗 Linked Discord Account",
                 value=f"**Username:** {discord_account.get('username', 'N/A')}\n"
                       f"**Email:** {discord_account.get('email', 'N/A')}",
                 inline=False
             )
 
-        # Informations des wallets
+        # Wallet information
         for i, wallet in enumerate(wallets_data['wallets'], 1):
-            wallet_address = wallet.get('address', 'Adresse non disponible')
-            wallet_type = wallet.get('wallet_type', 'Type inconnu')
-            chain_type = wallet.get('chain_type', 'Chaîne inconnue')
+            wallet_address = wallet.get('address', 'Address not available')
+            wallet_type = wallet.get('wallet_type', 'Unknown type')
+            chain_type = wallet.get('chain_type', 'Unknown chain')
             chain_id = wallet.get('chain_id', 'N/A')
 
-            # Formater le nom de la chaîne
+            # Format chain name
             chain_name = "Ethereum" if "eip155" in chain_id else "Solana" if "solana" in chain_id else chain_type
 
             embed.add_field(
                 name=f"💼 Wallet {i} ({chain_name})",
-                value=f"**Adresse:** `{wallet_address}`\n"
+                value=f"**Address:** `{wallet_address}`\n"
                       f"**Type:** {wallet_type}\n"
-                      f"**Chaîne:** {chain_name}",
+                      f"**Chain:** {chain_name}",
                 inline=False
             )
 
@@ -297,70 +289,70 @@ async def wallet_command(ctx):
         )
 
         embed.add_field(
-            name="🌐 Réseaux supportés",
-            value="• Ethereum Mainnet\n• Sepolia Testnet\n\nUtilisez `$balance sepolia` pour voir votre solde Sépolia",
+            name="🌐 Supported Networks",
+            value="• Ethereum Mainnet\n• Sepolia Testnet\n\nUse `$balance sepolia` to see your Sepolia balance",
             inline=False
         )
 
-        embed.set_footer(text="Informations récupérées depuis Privy.io")
+        embed.set_footer(text="Information retrieved from Privy.io")
 
         await loading_msg.edit(content="", embed=embed)
 
     except Exception as e:
-        await loading_msg.edit(content=f"❌ Erreur lors de la récupération des informations: {str(e)}")
-        print(f"❌ Erreur dans wallet_command: {e}")
+        await loading_msg.edit(content=f"❌ Error retrieving information: {str(e)}")
+        print(f"❌ Error in wallet_command: {e}")
 
 
-# Nouvelle commande $balance pour vérifier le solde sur Sépolia
+# New $balance command to check balance on Sepolia
 @bot.command(name='balance')
 async def balance_command(ctx, network='sepolia'):
-    """Vérifie le solde de votre wallet sur un réseau spécifique"""
+    """Check your wallet balance on a specific network"""
 
     if network not in NETWORKS:
-        await ctx.send(f"❌ Réseau '{network}' non supporté.\n"
-                       f"Réseaux disponibles: {', '.join(NETWORKS.keys())}")
+        await ctx.send(f"❌ Network '{network}' not supported.\n"
+                       f"Available networks: {', '.join(NETWORKS.keys())}")
         return
 
-    loading_msg = await ctx.send(f"🔍 Vérification du solde sur {NETWORKS[network]['name']}...")
+    loading_msg = await ctx.send(f"🔍 Checking balance on {NETWORKS[network]['name']}...")
 
     try:
-        # Récupérer l'utilisateur et ses wallets
+        # Get user and their wallets
         discord_user_id = ctx.author.id
         user_data = await privy_api.get_user_by_discord_id(discord_user_id)
 
         if not user_data:
-            await loading_msg.edit(content="❌ Aucun compte Privy trouvé lié à votre Discord.")
+            await loading_msg.edit(content="❌ No Privy account found linked to your Discord.")
             return
 
         wallets_data = await privy_api.get_user_wallets(user_data)
 
         if not wallets_data or not wallets_data.get('wallets'):
-            await loading_msg.edit(content="❌ Aucun wallet trouvé pour votre compte.")
+            await loading_msg.edit(content="❌ No wallet found for your account.")
             return
 
-        # Obtenir la connexion Web3
+        # Get Web3 connection
         w3 = web3_manager.get_web3(network)
 
         if not w3 or not web3_manager.is_connected(network):
-            await loading_msg.edit(content=f"❌ Impossible de se connecter au réseau {NETWORKS[network]['name']}.")
+            await loading_msg.edit(content=f"❌ Unable to connect to {NETWORKS[network]['name']} network.")
             return
 
         embed = discord.Embed(
-            title=f"💰 Soldes sur {NETWORKS[network]['name']}",
-            description=f"Informations pour {ctx.author.mention}",
+            title=f"💰 Balances on {NETWORKS[network]['name']}",
+            description=f"Information for {ctx.author.mention}",
             color=0x3498db,
             timestamp=datetime.now()
         )
 
-        # Vérifier le solde pour chaque wallet Ethereum
+        # Check balance for each Ethereum wallet
         for i, wallet in enumerate(wallets_data['wallets'], 1):
             wallet_address = wallet.get('address')
             chain_type = wallet.get('chain_type', '')
 
-            # Vérifier si c'est un wallet Ethereum
+            # Check if it's an Ethereum wallet
             if 'ethereum' in chain_type.lower() or 'eip155' in wallet.get('chain_id', ''):
                 try:
-                    # Vérifier que l'adresse est valide
+                    # Verify address is valid
                     if w3.is_address(wallet_address):
                         checksum_address = w3.to_checksum_address(wallet_address)
                         balance_wei = w3.eth.get_balance(checksum_address)
@@ -368,79 +360,79 @@ async def balance_command(ctx, network='sepolia'):
 
                         embed.add_field(
                             name=f"💼 Wallet {i}",
-                            value=f"**Adresse:** `{wallet_address}`\n"
-                                  f"**Solde:** {balance_eth:.6f} {NETWORKS[network]['currency']}\n"
-                                  f"**Explorer:** [Voir sur Etherscan]({NETWORKS[network]['explorer']}/address/{wallet_address})",
+                            value=f"**Address:** `{wallet_address}`\n"
+                                  f"**Balance:** {balance_eth:.6f} {NETWORKS[network]['currency']}\n"
+                                  f"**Explorer:** [View on Etherscan]({NETWORKS[network]['explorer']}/address/{wallet_address})",
                             inline=False
                         )
                     else:
                         embed.add_field(
                             name=f"💼 Wallet {i}",
-                            value=f"**Adresse:** `{wallet_address}`\n"
-                                  f"**Erreur:** Adresse invalide",
+                            value=f"**Address:** `{wallet_address}`\n"
+                                  f"**Error:** Invalid address",
                             inline=False
                         )
                 except Exception as e:
                     embed.add_field(
                         name=f"💼 Wallet {i}",
-                        value=f"**Adresse:** `{wallet_address}`\n"
-                              f"**Erreur:** {str(e)[:100]}...",
+                        value=f"**Address:** `{wallet_address}`\n"
+                              f"**Error:** {str(e)[:100]}...",
                         inline=False
                     )
 
-        # Informations sur le réseau
+        # Network information
         try:
             block_number = w3.eth.block_number
             gas_price = w3.eth.gas_price
             gas_price_gwei = w3.from_wei(gas_price, 'gwei')
 
             embed.add_field(
-                name="🌐 Informations du réseau",
-                value=f"**Réseau:** {NETWORKS[network]['name']}\n"
-                      f"**Bloc actuel:** {block_number:,}\n"
-                      f"**Prix du gaz:** {gas_price_gwei:.2f} Gwei",
+                name="🌐 Network Information",
+                value=f"**Network:** {NETWORKS[network]['name']}\n"
+                      f"**Current Block:** {block_number:,}\n"
+                      f"**Gas Price:** {gas_price_gwei:.2f} Gwei",
                 inline=False
             )
         except Exception as e:
-            print(f"❌ Erreur récupération infos réseau: {e}")
+            print(f"❌ Error retrieving network info: {e}")
 
-        # Ajouter le lien vers le faucet pour Sépolia
+        # Add faucet link for Sepolia
         if network == 'sepolia':
             embed.add_field(
-                name="🚰 Besoin de fonds de test ?",
-                value=f"Obtenez des SepoliaETH gratuits : [Sépolia Faucet]({NETWORKS['sepolia']['faucet']})",
+                name="🚰 Need test funds?",
+                value=f"Get free SepoliaETH: [Sepolia Faucet]({NETWORKS['sepolia']['faucet']})",
                 inline=False
             )
 
-        embed.set_footer(text=f"Données récupérées depuis {NETWORKS[network]['name']}")
+        embed.set_footer(text=f"Data retrieved from {NETWORKS[network]['name']}")
 
         await loading_msg.edit(content="", embed=embed)
 
     except Exception as e:
-        await loading_msg.edit(content=f"❌ Erreur lors de la vérification du solde: {str(e)}")
-        print(f"❌ Erreur dans balance_command: {e}")
+        await loading_msg.edit(content=f"❌ Error checking balance: {str(e)}")
+        print(f"❌ Error in balance_command: {e}")
 
 
-# Commande $networks pour lister les réseaux supportés
+# $networks command to list supported networks
 @bot.command(name='networks')
 async def networks_command(ctx):
-    """Affiche les réseaux supportés"""
+    """Display supported networks"""
 
     embed = discord.Embed(
-        title="🌐 Réseaux supportés",
-        description="Liste des réseaux blockchain disponibles",
+        title="🌐 Supported Networks",
+        description="List of available blockchain networks",
         color=0x9b59b6,
         timestamp=datetime.now()
     )
 
     for network_key, network_info in NETWORKS.items():
-        status = "🟢 Connecté" if web3_manager.is_connected(network_key) else "🔴 Déconnecté"
-        faucet_info = f"\n**Faucet:** [Lien]({network_info['faucet']})" if network_info['faucet'] else ""
+        status = "🟢 Connected" if web3_manager.is_connected(network_key) else "🔴 Disconnected"
+        faucet_info = f"\n**Faucet:** [Link]({network_info['faucet']})" if network_info['faucet'] else ""
 
         embed.add_field(
             name=f"{network_info['name']} ({network_key})",
             value=f"**Chain ID:** {network_info['chain_id']}\n"
-                  f"**Devise:** {network_info['currency']}\n"
+                  f"**Currency:** {network_info['currency']}\n"
                   f"**Status:** {status}\n"
                   f"**Explorer:** [Etherscan]({network_info['explorer']})"
                   f"{faucet_info}",
@@ -448,92 +440,29 @@ async def networks_command(ctx):
         )
 
     embed.add_field(
-        name="💡 Utilisation",
-        value="• `$balance sepolia` - Vérifier solde Sépolia\n"
-              "• `$balance ethereum` - Vérifier solde Ethereum\n"
-              "• `$wallet` - Voir tous vos wallets",
+        name="💡 Usage",
+        value="• `$balance sepolia` - Check Sepolia balance\n"
+              "• `$balance ethereum` - Check Ethereum balance\n"
+              "• `$wallet` - View all your wallets",
         inline=False
     )
 
-    embed.set_footer(text="Utilisez $balance <réseau> pour vérifier vos soldes")
+    embed.set_footer(text="Use $balance <network> to check your balances")
 
     await ctx.send(embed=embed)
 
 
-# Commande $test simplifiée
-@bot.command(name='test')
-async def test_command(ctx):
-    """Teste la connexion à l'API Privy et aux réseaux"""
-    loading_msg = await ctx.send("🔍 Test des connexions...")
-
-    try:
-        # Test de l'API Privy
-        session = await privy_api.get_session()
-        async with session.get(f"{privy_api.base_url}/api/v1/users",
-                               headers=privy_api.headers) as response:
-            if response.status == 200:
-                result = await response.json()
-                total_users = len(result.get('data', []))
-
-                # Compter les utilisateurs avec Discord
-                discord_users = 0
-                for user in result.get('data', []):
-                    for account in user.get('linked_accounts', []):
-                        if account.get('type') == 'discord_oauth':
-                            discord_users += 1
-                            break
-
-                embed = discord.Embed(
-                    title="🔧 Test des connexions",
-                    color=0x00ff00,
-                    timestamp=datetime.now()
-                )
-
-                embed.add_field(
-                    name="✅ API Privy",
-                    value=f"**Total utilisateurs:** {total_users}\n"
-                          f"**Avec Discord:** {discord_users}\n"
-                          f"**Méthode:** Basic Auth",
-                    inline=False
-                )
-
-                # Test des connexions Web3
-                network_status = ""
-                for network_key, network_info in NETWORKS.items():
-                    if web3_manager.is_connected(network_key):
-                        w3 = web3_manager.get_web3(network_key)
-                        try:
-                            block_number = w3.eth.block_number
-                            network_status += f"✅ {network_info['name']}: Bloc {block_number:,}\n"
-                        except:
-                            network_status += f"⚠️ {network_info['name']}: Connecté mais erreur\n"
-                    else:
-                        network_status += f"❌ {network_info['name']}: Déconnecté\n"
-
-                embed.add_field(
-                    name="🌐 Réseaux Web3",
-                    value=network_status,
-                    inline=False
-                )
-
-                await loading_msg.edit(content="", embed=embed)
-            else:
-                await loading_msg.edit(content=f"❌ Erreur API Privy: {response.status}")
-    except Exception as e:
-        await loading_msg.edit(content=f"❌ Erreur lors du test: {str(e)}")
-
-
-# Gestion des erreurs de commandes
+# Command error handling
 @bot.event
 async def on_command_error(ctx, error):
     if isinstance(error, commands.CommandNotFound):
         return
     else:
-        print(f'❌ Erreur dans la commande: {error}')
-        await ctx.send('Une erreur s\'est produite lors de l\'exécution de la commande.')
+        print(f'❌ Command error: {error}')
+        await ctx.send('An error occurred while executing the command.')
 
 
-# Événement optionnel : réagir aux messages (sans commande)
+# Optional event: react to messages (without command)
 @bot.event
 async def on_message(message):
     if message.author == bot.user:
@@ -541,119 +470,138 @@ async def on_message(message):
     await bot.process_commands(message)
 
 
-# Fonction de nettoyage à la fermeture
+# Cleanup function on shutdown
 async def close_bot():
     await privy_api.close()
     await bot.close()
 
 
-# Stockage temporaire des paiements en attente
+# Temporary storage for pending payments
 pending_payments = {}
 
+
 def save_pending_payments():
-    """Sauvegarde les paiements en attente dans un fichier"""
+    """Save pending payments to a file"""
     try:
         with open('pending_payments.json', 'w') as f:
             json.dump(pending_payments, f, indent=2, default=str)
     except Exception as e:
-        print(f"❌ Erreur sauvegarde paiements: {e}")
+        print(f"❌ Error saving payments: {e}")
+
 
 def load_pending_payments():
-    """Charge les paiements en attente depuis le fichier"""
+    """Load pending payments from file"""
     global pending_payments
     try:
         if os.path.exists('pending_payments.json'):
             with open('pending_payments.json', 'r') as f:
                 pending_payments = json.load(f)
     except Exception as e:
-        print(f"❌ Erreur chargement paiements: {e}")
+        print(f"❌ Error loading payments: {e}")
         pending_payments = {}
 
 
-# Commande $pay
+# $pay command
 @bot.command(name='pay')
 async def pay_command(ctx, recipient: discord.Member = None, amount: float = None, *, currency: str = "ETH"):
-    """Permet de payer un autre utilisateur Discord"""
-    
-    # Validation des paramètres
+    """Allows paying another Discord user"""
+
+    # Parameter validation
     if recipient is None:
-        await ctx.send("❌ **Usage:** `$pay @utilisateur <montant> [devise]`\n"
-                      "📋 **Exemple:** `$pay @JohnDoe 0.1 ETH`")
+        # This message will be ephemeral
+        await ctx.send("❌ **Usage:** `$pay @user <amount> [currency]`\n"
+                       "📋 **Example:** `$pay @JohnDoe 0.1 ETH`",
+                       ephemeral=True)
         return
-    
+
     if amount is None or amount <= 0:
-        await ctx.send("❌ Veuillez spécifier un montant valide (supérieur à 0)")
+        # This message will be ephemeral
+        await ctx.send("❌ Please specify a valid amount (greater than 0)", ephemeral=True)
         return
-    
+
     if recipient == ctx.author:
-        await ctx.send("❌ Vous ne pouvez pas vous payer vous-même!")
+        # This message will be ephemeral
+        await ctx.send("❌ You cannot pay yourself!", ephemeral=True)
         return
-    
+
     if recipient.bot:
-        await ctx.send("❌ Vous ne pouvez pas payer un bot!")
+        # This message will be ephemeral
+        await ctx.send("❌ You cannot pay a bot!", ephemeral=True)
         return
-    
-    # Message de traitement
-    loading_msg = await ctx.send("🔄 Traitement du paiement...")
-    
+
+    # Delete the user's initial message to not show it publicly
     try:
-        # Vérifier que l'expéditeur a un compte Privy
+        await ctx.message.delete()
+    except discord.Forbidden:
+        print(f"Unable to delete message from {ctx.author}. Missing permissions?")
+        # Continue even without deletion if permissions are missing
+    except discord.NotFound:
+        pass  # Message already deleted or not found
+
+    # Send initial loading message as a DM to the sender
+    loading_msg_dm = await ctx.author.send("🔄 Processing your payment request...")
+
+    try:
+        # Verify sender has a Privy account
         sender_data = await privy_api.get_user_by_discord_id(ctx.author.id)
         if not sender_data:
-            await loading_msg.edit(content="❌ **Erreur expéditeur:** Aucun compte Privy trouvé lié à votre Discord.\n"
-                                          "Connectez-vous d'abord sur notre application avec Discord.")
+            await loading_msg_dm.edit(
+                content="❌ **Sender error:** No Privy account found linked to your Discord.\n"
+                        "Please connect first on our application with Discord.")
             return
-        
-        # Vérifier que le destinataire a un compte Privy
+
+        # Verify recipient has a Privy account
         recipient_data = await privy_api.get_user_by_discord_id(recipient.id)
         if not recipient_data:
-            await loading_msg.edit(content=f"❌ **Erreur destinataire:** {recipient.mention} n'a pas de compte Privy lié.\n"
-                                          "Le destinataire doit d'abord se connecter sur notre application.")
+            await loading_msg_dm.edit(
+                content=f"❌ **Recipient error:** {recipient.mention} doesn't have a linked Privy account.\n"
+                        "The recipient must first connect on our application.")
             return
-        
-        # Récupérer les wallets de l'expéditeur
+
+        # Get sender's wallets
         sender_wallets = await privy_api.get_user_wallets(sender_data)
         if not sender_wallets or not sender_wallets.get('wallets'):
-            await loading_msg.edit(content="❌ **Erreur expéditeur:** Aucun wallet trouvé pour votre compte.")
+            await loading_msg_dm.edit(content="❌ **Sender error:** No wallet found for your account.")
             return
-        
-        # Récupérer les wallets du destinataire
+
+        # Get recipient's wallets
         recipient_wallets = await privy_api.get_user_wallets(recipient_data)
         if not recipient_wallets or not recipient_wallets.get('wallets'):
-            await loading_msg.edit(content=f"❌ **Erreur destinataire:** {recipient.mention} n'a pas de wallet configuré.")
+            await loading_msg_dm.edit(
+                content=f"❌ **Recipient error:** {recipient.mention} doesn't have a configured wallet.")
             return
-        
-        # Prendre le premier wallet de chaque utilisateur (Sepolia par défaut)
+
+        # Take the first wallet of each user (Sepolia by default)
         sender_wallet = None
         recipient_wallet = None
-        
-        # Chercher un wallet Sepolia en priorité, puis Ethereum
+
+        # Look for Sepolia wallet first, then Ethereum
         for wallet in sender_wallets['wallets']:
-            if ('eip155:11155111' in wallet.get('chain_id', '') or 
-                'eip155' in wallet.get('chain_id', '') or 
-                wallet.get('chain_type') == 'ethereum'):
+            if ('eip155:11155111' in wallet.get('chain_id', '') or
+                    'eip155' in wallet.get('chain_id', '') or
+                    wallet.get('chain_type') == 'ethereum'):
                 sender_wallet = wallet
                 break
-        
+
         for wallet in recipient_wallets['wallets']:
-            if ('eip155:11155111' in wallet.get('chain_id', '') or 
-                'eip155' in wallet.get('chain_id', '') or 
-                wallet.get('chain_type') == 'ethereum'):
+            if ('eip155:11155111' in wallet.get('chain_id', '') or
+                    'eip155' in wallet.get('chain_id', '') or
+                    wallet.get('chain_type') == 'ethereum'):
                 recipient_wallet = wallet
                 break
-        
-        # Si pas de wallet Ethereum, prendre le premier disponible
+
+        # If no Ethereum wallet, take the first available
         if not sender_wallet and sender_wallets['wallets']:
             sender_wallet = sender_wallets['wallets'][0]
-        
+
         if not recipient_wallet and recipient_wallets['wallets']:
             recipient_wallet = recipient_wallets['wallets'][0]
-        
+
         if not sender_wallet or not recipient_wallet:
-            await loading_msg.edit(content="❌ Impossible de trouver des wallets compatibles pour la transaction.")
+            await loading_msg_dm.edit(content="❌ Unable to find compatible wallets for the transaction.")
             return
-        
-        # Détails techniques - calculer les chaînes avant de les utiliser
+
+        # Technical details - calculate chains before using them
         def get_chain_name(wallet):
             chain_id = wallet.get('chain_id', '')
             if 'eip155:11155111' in chain_id:
@@ -664,14 +612,14 @@ async def pay_command(ctx, recipient: discord.Member = None, amount: float = Non
                 return f"Ethereum (Chain {chain_id.split(':')[-1]})"
             else:
                 return wallet.get('chain_type', 'Unknown')
-        
+
         sender_chain = get_chain_name(sender_wallet)
         recipient_chain = get_chain_name(recipient_wallet)
-        
-        # Générer un ID unique pour le paiement
+
+        # Generate unique ID for payment
         payment_id = str(uuid.uuid4())
-        
-        # Stocker les informations du paiement
+
+        # Store payment information
         payment_data = {
             'id': payment_id,
             'sender_id': ctx.author.id,
@@ -685,210 +633,256 @@ async def pay_command(ctx, recipient: discord.Member = None, amount: float = Non
             'sender_chain': sender_chain,
             'recipient_chain': recipient_chain,
             'timestamp': datetime.now().isoformat(),
-            'status': 'pending',
+            'status': 'pending',  # Initial status
             'guild_id': ctx.guild.id,
-            'channel_id': ctx.channel.id
+            'channel_id': ctx.channel.id,
+            'transaction_hash': None  # Add field for transaction hash
         }
-        
+
         pending_payments[payment_id] = payment_data
         save_pending_payments()
-        
-        # URL de confirmation du paiement (adaptez l'URL selon votre configuration)
+
+        # Payment confirmation URL (adapt URL according to your configuration)
         confirmation_url = f"http://localhost:5173/confirm-payment/{payment_id}"
-        
-        # Créer l'embed de paiement
+
+        # Create the payment embed for the SENDER (DM)
         embed = discord.Embed(
-            title="💸 Demande de Paiement",
-            description="Cliquez sur le lien ci-dessous pour confirmer la transaction",
-            color=0xffaa00,
+            title="💸 Your payment is ready to be sent!",  # More engaging title
+            description=f"Hi {ctx.author.mention}, your payment request of **{amount} {currency.upper()}** to {recipient.mention} has been generated.",
+            color=0x3498db,  # A nice blue color
             timestamp=datetime.now()
         )
-        
-        # Informations de la transaction
+
         embed.add_field(
-            name="👤 Expéditeur",
-            value=f"{ctx.author.mention}\n`{sender_wallet['address'][:10]}...{sender_wallet['address'][-8:]}`",
-            inline=True
-        )
-        
-        embed.add_field(
-            name="👤 Destinataire", 
-            value=f"{recipient.mention}\n`{recipient_wallet['address'][:10]}...{recipient_wallet['address'][-8:]}`",
-            inline=True
-        )
-        
-        embed.add_field(
-            name="💰 Montant",
-            value=f"**{amount} {currency.upper()}**",
-            inline=True
-        )
-        
-        # Détails techniques
-        embed.add_field(
-            name="⛓️ Réseau Expéditeur",
-            value=sender_chain,
-            inline=True
-        )
-        
-        embed.add_field(
-            name="⛓️ Réseau Destinataire", 
-            value=recipient_chain,
-            inline=True
-        )
-        
-        embed.add_field(
-            name="🆔 Transaction ID",
-            value=f"`PAY-{ctx.message.id}`",
-            inline=True
-        )
-        
-        # Adresses complètes
-        embed.add_field(
-            name="📍 Adresse Expéditeur",
-            value=f"`{sender_wallet['address']}`",
+            name="➡️ Transaction Details",
+            value=(
+                f"**From:** {ctx.author.name} (`{sender_wallet['address'][:6]}...{sender_wallet['address'][-4:]}`)\n"
+                f"**To:** {recipient.name} (`{recipient_wallet['address'][:6]}...{recipient_wallet['address'][-4:]}`)\n"
+                f"**Amount:** `{amount} {currency.upper()}`"
+            ),
             inline=False
         )
-        
+
         embed.add_field(
-            name="📍 Adresse Destinataire",
-            value=f"`{recipient_wallet['address']}`",
+            name="🔗 Confirm and Send",
+            value=f"To finalize this payment, please click on the secure link below and follow the instructions:\n[**Confirm payment here**]({confirmation_url})",
             inline=False
         )
-        
-        # Ajouter le lien de confirmation
-        embed.add_field(
-            name="🔗 Confirmer le paiement",
-            value=f"[Cliquez ici pour confirmer la transaction]({confirmation_url})",
-            inline=False
-        )
-        
-        # Ajouter note pour Sepolia
+
+        # Add note for Sepolia
         testnet_warning = ""
         if "Sepolia" in sender_chain or "Sepolia" in recipient_chain:
-            testnet_warning = "\n🚨 **TESTNET SEPOLIA** - Utilisez des ETH de test uniquement!"
-        
+            testnet_warning = "\n🚨 **Warning: This is the Sepolia test network.** Funds have no real value."
+
         embed.add_field(
-            name="⚠️ Important",
-            value=f"Cliquez sur le lien pour être redirigé vers l'interface web et confirmer votre paiement.\n"
-                  f"Ce lien expire dans 24 heures.{testnet_warning}",
+            name="⚠️ Important Information",
+            value=(
+                f"This link is personal and must be used by you only.\n"
+                f"The link will expire after 24 hours.\n"
+                f"**Transaction ID:** `{payment_id}`"
+                f"{testnet_warning}"
+            ),
             inline=False
         )
-        
-        embed.set_footer(text=f"PayBot • ID: {payment_id[:8]}")
-        
-        # Envoyer l'embed
-        await loading_msg.edit(content="", embed=embed)
-        
-        # Notification au destinataire avec lien
-        try:
-            dm_embed = discord.Embed(
-                title="💰 Vous avez reçu une demande de paiement!",
-                description=f"{ctx.author.mention} souhaite vous envoyer **{amount} {currency.upper()}**",
-                color=0x00ff00
-            )
-            dm_embed.add_field(
-                name="💼 Votre wallet",
-                value=f"`{recipient_wallet['address']}`",
-                inline=False
-            )
-            dm_embed.add_field(
-                name="🔗 Voir le paiement",
-                value=f"[Cliquez ici pour voir les détails]({confirmation_url})",
-                inline=False
-            )
-            
-            await recipient.send(embed=dm_embed)
-        except discord.Forbidden:
-            await ctx.send(f"📬 {recipient.mention}, vous avez reçu une demande de paiement ci-dessus!")
-        
-    except Exception as e:
-        await loading_msg.edit(content=f"❌ Erreur lors du traitement du paiement: {str(e)}")
-        print(f"❌ Erreur dans pay_command: {e}")
 
-# Nouvelle commande pour vérifier le statut d'un paiement
+        embed.set_footer(text="Thank you for using PayBot for your secure transactions.")
+
+        # Send embed as DM to sender
+        await loading_msg_dm.edit(content="", embed=embed)
+        # Send a short, ephemeral message in the channel
+        await ctx.send(
+            f"✅ {ctx.author.mention}, your payment request has been sent to your private messages. Please check your DMs to confirm the transaction.",
+            ephemeral=True)
+
+    except Exception as e:
+        await loading_msg_dm.edit(content=f"❌ Error processing payment: {str(e)}")
+        print(f"❌ Error in pay_command: {e}")
+
+
+# New command to check payment status
 @bot.command(name='payment')
 async def payment_status(ctx, payment_id: str = None):
-    """Vérifie le statut d'un paiement"""
+    """Check payment status"""
     if not payment_id:
-        await ctx.send("❌ **Usage:** `$payment <ID_paiement>`")
+        await ctx.send("❌ **Usage:** `$payment <payment_ID>`", ephemeral=True)
         return
-    
+
     payment = pending_payments.get(payment_id)
     if not payment:
-        await ctx.send("❌ Paiement non trouvé ou expiré.")
+        await ctx.send("❌ Payment not found or expired.", ephemeral=True)
         return
-    
+
+    # Check if the user requesting status is sender or recipient
+    if ctx.author.id not in [payment['sender_id'], payment['recipient_id']]:
+        await ctx.send("❌ You are not authorized to view this payment status.", ephemeral=True)
+        return
+
     embed = discord.Embed(
-        title=f"📊 Statut du Paiement",
+        title=f"📊 Payment Status",
         color=0x00ff00 if payment['status'] == 'completed' else 0xffaa00,
         timestamp=datetime.now()
     )
-    
-    embed.add_field(name="🆔 ID", value=f"`{payment_id}`", inline=True)
-    embed.add_field(name="📊 Statut", value=payment['status'], inline=True)
-    embed.add_field(name="💰 Montant", value=f"{payment['amount']} {payment['currency']}", inline=True)
-    embed.add_field(name="👤 Expéditeur", value=payment['sender_name'], inline=True)
-    embed.add_field(name="👤 Destinataire", value=payment['recipient_name'], inline=True)
-    embed.add_field(name="📅 Date", value=payment['timestamp'][:19], inline=True)
-    
-    await ctx.send(embed=embed)
 
-# Nouvelle commande pour obtenir des ETH de test Sepolia
+    embed.add_field(name="🆔 ID", value=f"`{payment_id}`", inline=True)
+    embed.add_field(name="📊 Status", value=payment['status'], inline=True)
+    embed.add_field(name="💰 Amount", value=f"{payment['amount']} {payment['currency']}", inline=True)
+    embed.add_field(name="👤 Sender", value=payment['sender_name'], inline=True)
+    embed.add_field(name="👤 Recipient", value=payment['recipient_name'], inline=True)
+    embed.add_field(name="📅 Date", value=payment['timestamp'][:19], inline=True)
+    if payment.get('transaction_hash'):
+        embed.add_field(name="🔗 Transaction Hash", value=f"`{payment['transaction_hash']}`", inline=False)
+
+    await ctx.send(embed=embed, ephemeral=True)  # Made this response ephemeral too
+
+
+# NEW COMMAND: To be called by your backend after transaction confirmation
+@bot.command(name='confirm_payment')
+@commands.is_owner()  # Limit this command to bot owner for security
+async def confirm_payment_command(ctx, payment_id: str = None, transaction_hash: str = "N/A"):
+    """
+    [ADMIN ONLY] Simulates payment confirmation by backend.
+    Sends private message to recipient once transaction is "processed".
+    """
+    if not payment_id:
+        await ctx.send("❌ Usage: `$confirm_payment <payment_ID> [transaction_hash]`")
+        return
+
+    payment = pending_payments.get(payment_id)
+    if not payment:
+        await ctx.send(f"❌ Payment with ID `{payment_id}` not found or already processed.")
+        return
+
+    if payment['status'] == 'completed':
+        await ctx.send(f"⚠️ Payment `{payment_id}` is already marked as completed.")
+        return
+
+    # Update payment status
+    payment['status'] = 'completed'
+    payment['transaction_hash'] = transaction_hash
+    save_pending_payments()
+
+    # Get Discord recipient
+    recipient_id = payment['recipient_id']
+    recipient_discord_user = bot.get_user(recipient_id)  # Try to get user object
+
+    if not recipient_discord_user:
+        try:  # If not in cache, try to fetch
+            recipient_discord_user = await bot.fetch_user(recipient_id)
+        except discord.NotFound:
+            print(f"❌ Discord recipient {recipient_id} not found for payment {payment_id}")
+            await ctx.send(f"❌ Discord recipient for payment `{payment_id}` not found.")
+            return
+        except Exception as e:
+            print(f"❌ Error fetching recipient {recipient_id}: {e}")
+            await ctx.send(f"❌ Error retrieving recipient for payment `{payment_id}`.")
+            return
+
+    # Send DM to recipient
+    try:
+        embed = discord.Embed(
+            title="🎉 You received money!",  # New title
+            description=(f"{payment['sender_name']} sent you **{payment['amount']} {payment['currency']}** "
+                         f"to your wallet `{payment['recipient_wallet'][:10]}...{payment['recipient_wallet'][-8:]}` !"),
+            # New description
+            color=0x00ff00,
+            timestamp=datetime.now()
+        )
+
+        embed.add_field(
+            name="🆔 Payment ID",
+            value=f"`{payment_id}`",
+            inline=True
+        )
+        if transaction_hash != "N/A":
+            embed.add_field(
+                name="🔗 Transaction Hash",
+                value=f"`{transaction_hash}`",
+                inline=False
+            )
+            network_info = None
+            # Try to find explorer information for recipient's network
+            for key, info in NETWORKS.items():
+                if info['name'] == payment['recipient_chain']:
+                    network_info = info
+                    break
+
+            if network_info and network_info.get('explorer'):
+                embed.add_field(
+                    name="🌐 View on Explorer",
+                    value=f"[Click here]({network_info['explorer']}/tx/{transaction_hash})",
+                    inline=False
+                )
+
+        embed.set_footer(text="Congratulations!")
+
+        await recipient_discord_user.send(embed=embed)
+        await ctx.send(
+            f"✅ Payment `{payment_id}` marked as completed. DM sent to {recipient_discord_user.mention}.")
+
+    except discord.Forbidden:
+        await ctx.send(
+            f"❌ Unable to send DM to {recipient_discord_user.mention}. They may have DMs disabled.")
+    except Exception as e:
+        await ctx.send(f"❌ Error sending DM to recipient for payment `{payment_id}`: {str(e)}")
+        print(f"❌ Error sending payment confirmation DM: {e}")
+
+
+# New command to get Sepolia test ETH
 @bot.command(name='faucet')
 async def faucet_command(ctx):
-    """Fournit des liens vers les faucets Sepolia"""
-    
+    """Provides links to Sepolia faucets"""
+
     embed = discord.Embed(
-        title="🚰 Faucets Sepolia Testnet",
-        description="Obtenez des ETH de test pour Sepolia",
+        title="🚰 Sepolia Testnet Faucets",
+        description="Get test ETH for Sepolia",
         color=0x00ff00,
         timestamp=datetime.now()
     )
-    
+
     embed.add_field(
-        name="🔗 Faucets recommandés",
+        name="🔗 Recommended Faucets",
         value="• [Sepolia Faucet](https://sepoliafaucet.com/)\n"
               "• [Alchemy Sepolia Faucet](https://sepoliafaucet.net/)\n"
               "• [QuickNode Faucet](https://faucet.quicknode.com/ethereum/sepolia)\n"
               "• [Infura Faucet](https://www.infura.io/faucet/sepolia)",
         inline=False
     )
-    
+
     embed.add_field(
         name="📋 Instructions",
-        value="1. Utilisez `$wallet` pour obtenir votre adresse\n"
-              "2. Visitez un des faucets ci-dessus\n"
-              "3. Collez votre adresse de wallet\n"
-              "4. Récupérez vos ETH de test gratuits",
+        value="1. Use `$wallet` to get your address\n"
+              "2. Visit one of the faucets above\n"
+              "3. Paste your wallet address\n"
+              "4. Get your free test ETH",
         inline=False
     )
-    
+
     embed.add_field(
         name="⚠️ Important",
-        value="• Les ETH Sepolia n'ont aucune valeur réelle\n"
-              "• Utilisés uniquement pour les tests\n"
-              "• Limite quotidienne par faucet",
+        value="• Sepolia ETH has no real value\n"
+              "• Used only for testing\n"
+              "• Daily limit per faucet",
         inline=False
     )
-    
+
     await ctx.send(embed=embed)
 
 
-# Charger les paiements en attente au démarrage
+# Load pending payments at startup
 load_pending_payments()
 
-# Lancer le bot
+# Launch the bot
 if __name__ == '__main__':
     try:
-        print("🚀 Démarrage du bot...")
+        print("🚀 Starting bot...")
         bot.run(config['discord_token'])
     except discord.errors.LoginFailure:
-        print("❌ Token Discord invalide! Vérifiez votre token dans config.json")
+        print("❌ Invalid Discord token! Check your token in config.json")
     except KeyError as e:
-        print(f"❌ Clé manquante dans config.json: {e}")
-        print("📝 Assurez-vous d'avoir: discord_token, privy_app_id, privy_app_secret")
+        print(f"❌ Missing key in config.json: {e}")
+        print("📝 Make sure you have: discord_token, privy_app_id, privy_app_secret")
     except Exception as e:
-        print(f"❌ Erreur inattendue: {e}")
+        print(f"❌ Unexpected error: {e}")
     finally:
-        # Nettoyage
+        # Cleanup
         asyncio.run(privy_api.close())

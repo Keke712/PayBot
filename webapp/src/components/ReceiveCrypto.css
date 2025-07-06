@@ -1,0 +1,569 @@
+.receive-crypto-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.receive-crypto-header {
+  text-align: center;
+  margin-bottom: 3rem;
+  position: relative;
+}
+
+.back-button {
+  position: absolute;
+  left: 0;
+  top: 0;
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-light);
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.back-button:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border-color: var(--border-medium);
+  transform: translateY(-1px);
+}
+
+.receive-crypto-header h1 {
+  font-size: 3rem;
+  font-weight: 800;
+  background: var(--gradient-success);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 1rem;
+}
+
+.receive-crypto-header p {
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.receive-crypto-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* No Wallets Message */
+.no-wallets-message {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-light);
+  border-radius: 24px;
+  box-shadow: var(--shadow-lg);
+}
+
+.no-wallets-icon {
+  font-size: 4rem;
+  margin-bottom: 2rem;
+}
+
+.no-wallets-message h3 {
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+}
+
+.no-wallets-message p {
+  color: var(--text-secondary);
+  margin-bottom: 1rem;
+  line-height: 1.6;
+}
+
+.no-wallets-message code {
+  background: var(--bg-secondary);
+  color: var(--primary);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Wallet Selector */
+.wallet-selector-section {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-light);
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.wallet-selector-section h3 {
+  color: var(--text-primary);
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.wallet-selector {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.wallet-option {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.wallet-option:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--success);
+  transform: translateY(-1px);
+}
+
+.wallet-option.selected {
+  background: rgba(5, 150, 105, 0.1);
+  border-color: var(--success);
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.15);
+}
+
+.wallet-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.wallet-type {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.wallet-address-short {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.wallet-network {
+  font-size: 0.8rem;
+  color: var(--success);
+  font-weight: 500;
+  padding: 0.25rem 0.5rem;
+  background: rgba(5, 150, 105, 0.1);
+  border-radius: 6px;
+}
+
+/* Main Receive Section */
+.receive-main-section {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 2rem;
+  align-items: flex-start;
+}
+
+/* Receive Card */
+.receive-card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-light);
+  border-radius: 24px;
+  padding: 3rem;
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  overflow: hidden;
+}
+
+.receive-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--gradient-success);
+}
+
+.receive-card-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.receive-card-header h2 {
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+  font-size: 1.75rem;
+}
+
+.receive-instruction {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  line-height: 1.6;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+/* QR Code Section */
+.qr-code-section {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.qr-code-container {
+  display: inline-block;
+  padding: 1rem;
+  background: white;
+  border-radius: 16px;
+  box-shadow: var(--shadow-md);
+  margin-bottom: 1rem;
+}
+
+.qr-code {
+  width: 200px;
+  height: 200px;
+  border-radius: 8px;
+}
+
+.qr-instruction {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+/* Address Section */
+.address-section {
+  margin-bottom: 2rem;
+}
+
+.address-label {
+  display: block;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.75rem;
+}
+
+.address-container {
+  display: flex;
+  gap: 0.75rem;
+  align-items: stretch;
+}
+
+.address-display {
+  flex: 1;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  padding: 1rem;
+  overflow: hidden;
+}
+
+.address-code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  word-break: break-all;
+  line-height: 1.4;
+}
+
+.copy-button {
+  background: var(--gradient-success);
+  color: white;
+  border: none;
+  padding: 1rem 1.5rem;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.copy-button:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.copy-success {
+  margin-top: 0.5rem;
+  color: var(--success);
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-align: center;
+}
+
+/* Wallet Details */
+.wallet-details {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.detail-row:last-child {
+  border-bottom: none;
+}
+
+.detail-label {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.detail-value {
+  color: var(--text-primary);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.testnet-badge {
+  background: linear-gradient(135deg, #fee2e2, #fecaca);
+  color: #991b1b;
+  border: 1px solid #f87171;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Instructions Panel */
+.instructions-panel {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-light);
+  border-radius: 24px;
+  padding: 2rem;
+  box-shadow: var(--shadow-sm);
+  height: fit-content;
+  position: sticky;
+  top: 2rem;
+}
+
+.instructions-panel h3 {
+  color: var(--text-primary);
+  margin-bottom: 2rem;
+  font-size: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.instruction-step {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  align-items: flex-start;
+}
+
+.step-number {
+  width: 32px;
+  height: 32px;
+  background: var(--gradient-success);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+.step-content h4 {
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+}
+
+.step-content p {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.step-content code {
+  background: var(--bg-secondary);
+  color: var(--primary);
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+}
+
+/* Safety Section */
+.safety-section {
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-top: 2rem;
+}
+
+.safety-section h4 {
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.safety-section ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.safety-section li {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.4;
+  margin-bottom: 0.5rem;
+  padding-left: 1.5rem;
+  position: relative;
+}
+
+.safety-section li::before {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+/* Network Warning */
+.network-warning {
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-top: 2rem;
+  border: 1px solid;
+}
+
+.network-warning.testnet {
+  background: rgba(255, 107, 53, 0.1);
+  border-color: rgba(255, 107, 53, 0.3);
+}
+
+.network-warning.mainnet {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.network-warning h4 {
+  margin-bottom: 0.75rem;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.network-warning.testnet h4 {
+  color: #ea580c;
+}
+
+.network-warning.mainnet h4 {
+  color: var(--error);
+}
+
+.network-warning p {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.network-warning.testnet p {
+  color: #ea580c;
+}
+
+.network-warning.mainnet p {
+  color: var(--error);
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .receive-main-section {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+  
+  .instructions-panel {
+    position: static;
+  }
+}
+
+@media (max-width: 768px) {
+  .receive-crypto-container {
+    padding: 1rem;
+  }
+  
+  .receive-crypto-header {
+    margin-bottom: 2rem;
+  }
+  
+  .back-button {
+    position: static;
+    margin-bottom: 1rem;
+    width: fit-content;
+  }
+  
+  .receive-crypto-header h1 {
+    font-size: 2.5rem;
+  }
+  
+  .receive-card {
+    padding: 2rem;
+  }
+  
+  .wallet-selector {
+    grid-template-columns: 1fr;
+  }
+  
+  .address-container {
+    flex-direction: column;
+  }
+  
+  .instructions-panel {
+    padding: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .receive-crypto-header h1 {
+    font-size: 2rem;
+  }
+  
+  .receive-card {
+    padding: 1.5rem;
+  }
+  
+  .qr-code {
+    width: 150px;
+    height: 150px;
+  }
+  
+  .instruction-step {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .step-number {
+    align-self: center;
+  }
+}

@@ -1,0 +1,340 @@
+.user-dropdown {
+  position: relative;
+}
+
+.user-dropdown-button {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-light);
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  min-width: 200px; /* Assurer la même largeur que network selector */
+  max-width: 200px; /* Fixer une largeur maximale */
+  box-shadow: var(--shadow-sm);
+  height: 56px; /* Même hauteur que le network selector */
+}
+
+.user-dropdown-button:hover {
+  background: var(--bg-secondary);
+  border-color: var(--primary);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--gradient-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.user-avatar-icon {
+  color: white;
+  font-size: 1rem;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  flex: 1;
+  min-width: 0;
+}
+
+.user-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px;
+}
+
+.user-status {
+  font-size: 0.75rem;
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.dropdown-arrow {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.dropdown-arrow.open {
+  transform: rotate(180deg);
+}
+
+/* Dropdown Menu */
+.user-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  min-width: 400px; /* Augmenté de 320px à 400px */
+  max-width: 450px; /* Ajout d'une largeur maximale */
+  background: var(--bg-primary);
+  border: 1px solid var(--border-light);
+  border-radius: 16px;
+  box-shadow: var(--shadow-xl);
+  z-index: 1000;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+  animation: dropdownFadeIn 0.2s ease;
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.user-dropdown-header {
+  padding: 2rem 1.5rem; /* Augmenté le padding vertical de 1.5rem à 2rem */
+  background: var(--bg-secondary);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.user-header-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--gradient-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.user-header-icon {
+  color: white;
+  font-size: 1.5rem;
+}
+
+.user-header-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.user-header-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  word-break: break-all;
+}
+
+.user-header-id {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: var(--border-light);
+  margin: 0;
+}
+
+.linked-accounts-section {
+  padding: 1.5rem 1.5rem; /* Augmenté le padding vertical de 1rem à 1.5rem */
+}
+
+.section-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  display: block;
+  margin-bottom: 1rem;
+}
+
+.linked-accounts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.linked-account-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.linked-account-item:hover {
+  background: var(--bg-tertiary);
+}
+
+.account-icon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.account-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.account-name {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  word-break: break-all;
+}
+
+.account-type {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: capitalize;
+}
+
+.account-status {
+  color: var(--accent);
+  font-size: 0.875rem;
+  flex-shrink: 0;
+}
+
+.user-dropdown-actions {
+  padding: 1.5rem; /* Augmenté de 1rem à 1.5rem */
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem; /* Augmenté de 0.5rem à 0.75rem */
+}
+
+.dropdown-action-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem; /* Augmenté de 0.75rem à 1rem */
+  padding: 1rem 1.25rem; /* Augmenté le padding horizontal de 1rem à 1.25rem */
+  background: transparent;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  width: 100%;
+  text-align: left;
+}
+
+.dropdown-action-item:hover {
+  background: var(--bg-secondary);
+}
+
+.dropdown-action-item.logout-item:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--error);
+}
+
+.dropdown-action-item.link-accounts-item {
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.1), rgba(124, 58, 237, 0.1));
+  border: 1px solid rgba(37, 99, 235, 0.2);
+  margin-bottom: 0.5rem;
+}
+
+.dropdown-action-item.link-accounts-item:hover {
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.15), rgba(124, 58, 237, 0.15));
+  border-color: var(--primary);
+  transform: translateY(-1px);
+}
+
+.link-accounts-item .action-icon {
+  color: var(--primary);
+}
+
+.link-accounts-item .action-label {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.link-accounts-item:hover .action-label {
+  color: var(--primary-hover);
+}
+
+.action-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.action-label {
+  font-size: 0.9rem; /* Augmenté de 0.875rem à 0.9rem */
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.logout-item .action-label {
+  color: var(--text-secondary);
+}
+
+.logout-item:hover .action-label {
+  color: var(--error);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .user-dropdown-button {
+    min-width: 160px; /* Correspondre au network selector */
+    max-width: 160px; /* Correspondre au network selector */
+    padding: 0.75rem;
+  }
+  
+  .user-name {
+    max-width: 100px;
+  }
+  
+  .user-dropdown-menu {
+    min-width: 350px; /* Augmenté de 280px à 350px */
+    max-width: 380px; /* Augmenté la largeur max */
+    right: -75px; /* Ajusté pour centrer */
+  }
+}
+
+@media (max-width: 480px) {
+  .user-dropdown-menu {
+    right: -120px; /* Ajusté pour centrer */
+    min-width: 320px; /* Augmenté de 260px à 320px */
+    max-width: 350px; /* Augmenté la largeur max */
+  }
+  
+  .user-dropdown-button {
+    min-width: 140px; /* Même taille que le network selector */
+    max-width: 140px; /* Même taille que le network selector */
+  }
+  
+  .user-name {
+    max-width: 80px;
+  }
+}
+
+@media (max-width: 380px) {
+  .user-dropdown-menu {
+    right: -140px;
+    min-width: 300px;
+    max-width: 320px;
+  }
+}

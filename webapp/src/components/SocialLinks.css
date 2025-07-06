@@ -1,0 +1,106 @@
+.social-links {
+  position: relative;
+}
+
+.social-links-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-light);
+  border-radius: 16px;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.3s ease;
+}
+
+.social-links-container:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--border-medium);
+}
+
+.social-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 12px;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.social-link:hover {
+  background: var(--bg-secondary);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.social-link:hover::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--link-color);
+}
+
+.social-icon {
+  font-size: 1.25rem;
+  transition: transform 0.2s ease;
+}
+
+.social-link:hover .social-icon {
+  transform: scale(1.1);
+}
+
+.social-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  transition: color 0.2s ease;
+}
+
+.social-link:hover .social-label {
+  color: var(--text-primary);
+}
+
+/* Individual social link colors */
+.social-link:nth-child(1):hover {
+  border-color: #5865f2;
+}
+
+.social-link:nth-child(2):hover {
+  border-color: #24292e;
+}
+
+.social-link:nth-child(3):hover {
+  border-color: #1da1f2;
+}
+
+.social-link:nth-child(4):hover {
+  border-color: #627eea;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .social-links-container {
+    padding: 0.5rem;
+    gap: 0.25rem;
+  }
+  
+  .social-link {
+    padding: 0.5rem;
+  }
+  
+  .social-label {
+    display: none;
+  }
+  
+  .social-icon {
+    font-size: 1.1rem;
+  }
+}

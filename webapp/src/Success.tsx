@@ -16,31 +16,30 @@ function Success() {
   return (
     <div className="card success-page">
       <div className="success-icon">✅</div>
-      <h2>Paiement Exécuté!</h2>
-      <p>Votre transaction a été envoyée avec succès via Privy.</p>
+      <h2>Payment Executed!</h2>
+      <p>Your transaction has been sent successfully via Privy.</p>
 
       <div className="success-details">
-        <h3>🎉 Transaction terminée:</h3>
+        <h3>🎉 Transaction completed:</h3>
         <ul>
-          <li>✅ Transaction envoyée sur la blockchain</li>
-          <li>✅ Confirmée via Privy</li>
-          <li>✅ Fonds transférés au destinataire</li>
-          <li>🔄 En cours de confirmation sur le réseau</li>
+          <li>✅ Transaction sent to blockchain</li>
+          <li>✅ Confirmed via Privy</li>
+          <li>✅ Funds transferred to recipient</li>
+          <li>🔄 Being confirmed on network</li>
         </ul>
       </div>
 
       <div className="next-steps">
         <p>
-          💡 <strong>Fait!</strong> Votre paiement a été traité automatiquement
-          par Privy. La transaction est maintenant visible sur la blockchain.
+          💡 <strong>Done!</strong> Your payment has been processed
+          automatically by Privy. The transaction is now visible on the
+          blockchain.
         </p>
       </div>
 
-      <button onClick={() => navigate("/")}>🏠 Retour à l'accueil</button>
+      <button onClick={() => navigate("/")}>🏠 Back to home</button>
 
-      <p className="auto-redirect">
-        Redirection automatique dans 5 secondes...
-      </p>
+      <p className="auto-redirect">Automatic redirect in 5 seconds...</p>
     </div>
   );
 }

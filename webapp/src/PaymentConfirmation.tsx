@@ -10,6 +10,8 @@ interface PaymentData {
   recipient_name: string;
   amount: number;
   currency: string;
+  network?: string; // Add network field
+  chain_id?: number; // Add chain_id field
   sender_wallet: string;
   recipient_wallet: string;
   sender_chain: string;
@@ -79,6 +81,29 @@ function PaymentConfirmation() {
         "🔄 Exécution de la transaction via Privy intégration directe..."
       );
 
+      // Déterminer le chain ID correct basé sur le réseau du paiement
+      let targetChainId: number;
+      let networkName: string;
+
+      if (payment.network === "sepolia" || payment.chain_id === 11155111) {
+        targetChainId = 11155111; // Sepolia
+        networkName = "Sepolia Testnet";
+      } else if (payment.network === "ethereum" || payment.chain_id === 1) {
+        targetChainId = 1; // Ethereum Mainnet
+        networkName = "Ethereum Mainnet";
+      } else {
+        // Fallback sur le chain_id du paiement
+        targetChainId = payment.chain_id || 11155111;
+        networkName = payment.sender_chain || "Réseau inconnu";
+      }
+
+      console.log("🌐 Réseau cible:", {
+        paymentNetwork: payment.network,
+        paymentChainId: payment.chain_id,
+        targetChainId: targetChainId,
+        networkName: networkName,
+      });
+
       // Trouver le wallet de l'expéditeur
       const senderWallet = wallets.find(
         (w) => w.address.toLowerCase() === payment.sender_wallet.toLowerCase()
@@ -113,10 +138,12 @@ function PaymentConfirmation() {
       // Utiliser Privy's sendTransaction hook directement
       console.log("📤 Envoi de la transaction via Privy sendTransaction...");
 
+      // Privy handles network switching automatically based on the transaction
       const txResult = await sendTransaction({
         to: payment.recipient_wallet,
         value: amountInWei.toString(),
-        // Privy gère automatiquement le réseau et la signature
+        // Let Privy handle the chain automatically, or include if supported
+        ...(targetChainId && { chainId: targetChainId }),
       });
 
       // Extraire le hash de la transaction
@@ -202,10 +229,74 @@ function PaymentConfirmation() {
     }
   };
 
+  // Helper function to determine if it's a testnet
+  const isTestnet = () => {
+    if (!payment) return false;
+
+    // Check multiple indicators for Sepolia testnet
+    return (
+      payment.network === "sepolia" ||
+      payment.chain_id === 11155111 ||
+      payment.sender_chain?.toLowerCase().includes("sepolia") ||
+      payment.sender_chain?.toLowerCase().includes("testnet")
+    );
+  };
+
+  // Helper function to determine if it's mainnet
+  const isMainnet = () => {
+    if (!payment) return false;
+
+    // Only consider it mainnet if explicitly ethereum network with chain ID 1
+    return (
+      (payment.network === "ethereum" && payment.chain_id === 1) ||
+      payment.chain_id === 1 ||
+      (payment.sender_chain?.toLowerCase().includes("mainnet") &&
+        !payment.sender_chain?.toLowerCase().includes("sepolia"))
+    );
+  };
+
+  // Helper function to get correct explorer URL
+  const getExplorerUrl = () => {
+    if (isTestnet()) {
+      return "https://sepolia.etherscan.io";
+    } else if (isMainnet()) {
+      return "https://etherscan.io";
+    } else {
+      // Default to Sepolia for unknown networks
+      return "https://sepolia.etherscan.io";
+    }
+  };
+
+  // Helper function to get network display name
+  const getNetworkDisplayName = () => {
+    if (isTestnet()) {
+      return "Sepolia Testnet";
+    } else if (isMainnet()) {
+      return "Ethereum Mainnet";
+    } else {
+      // Fallback to payment data or default
+      return payment?.sender_chain || payment?.network || "Réseau inconnu";
+    }
+  };
+
+  // Add debug logging to understand what's happening
+  useEffect(() => {
+    if (payment) {
+      console.log("🔍 Debug network detection:", {
+        network: payment.network,
+        chain_id: payment.chain_id,
+        sender_chain: payment.sender_chain,
+        isTestnet: isTestnet(),
+        isMainnet: isMainnet(),
+        displayName: getNetworkDisplayName(),
+      });
+    }
+  }, [payment]);
+
   if (loading) {
     return (
       <div className="card">
-        <h2>🔄 Chargement du paiement...</h2>
+        <h2>🔄 Loading payment...</h2>
       </div>
     );
   }
@@ -213,9 +304,9 @@ function PaymentConfirmation() {
   if (error || !payment) {
     return (
       <div className="card">
-        <h2>❌ Erreur</h2>
-        <p>{error || "Paiement non trouvé"}</p>
-        <button onClick={() => navigate("/")}>Retour à l'accueil</button>
+        <h2>❌ Error</h2>
+        <p>{error || "Payment not found"}</p>
+        <button onClick={() => navigate("/")}>Back to home</button>
       </div>
     );
   }
@@ -223,47 +314,49 @@ function PaymentConfirmation() {
   if (!authenticated) {
     return (
       <div className="card">
-        <h2>🔐 Authentification requise</h2>
-        <p>Connectez-vous pour confirmer ce paiement</p>
+        <h2>🔐 Authentication required</h2>
+        <p>Connect to confirm this payment</p>
         <div className="payment-summary">
-          <h3>📋 Détails du paiement:</h3>
+          <h3>📋 Payment details:</h3>
           <p>
-            <strong>Expéditeur:</strong> {payment.sender_name}
+            <strong>Sender:</strong> {payment.sender_name}
           </p>
           <p>
-            <strong>Destinataire:</strong> {payment.recipient_name}
+            <strong>Recipient:</strong> {payment.recipient_name}
           </p>
           <p>
-            <strong>Montant:</strong> {payment.amount} {payment.currency}
+            <strong>Amount:</strong> {payment.amount} {payment.currency}
           </p>
         </div>
-        <button onClick={login}>🔐 Se connecter avec Privy</button>
+        <button onClick={login}>🔐 Connect with Privy</button>
       </div>
     );
   }
 
   return (
     <div className="card">
-      <h2>💸 Confirmation de Paiement</h2>
+      <h2>💸 Payment Confirmation</h2>
 
       {payment.status === "completed" ? (
         <div className="success-message">
-          <h3>✅ Paiement confirmé avec succès!</h3>
-          <p>La transaction a été exécutée sur la blockchain via Privy.</p>
+          <h3>✅ Payment confirmed successfully!</h3>
+          <p>
+            The transaction was executed on {getNetworkDisplayName()} via Privy.
+          </p>
           {transactionHash && (
             <div className="transaction-details">
               <p>
-                <strong>Hash de transaction:</strong>
+                <strong>Transaction hash:</strong>
               </p>
               <code>{transactionHash}</code>
               <br />
               <a
-                href={`https://sepolia.etherscan.io/tx/${transactionHash}`}
+                href={`${getExplorerUrl()}/tx/${transactionHash}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{ marginTop: "10px", display: "inline-block" }}
               >
-                🔗 Voir sur Etherscan
+                🔗 View on Etherscan
               </a>
             </div>
           )}
@@ -278,7 +371,7 @@ function PaymentConfirmation() {
                 <strong>Hash:</strong> <code>{transactionHash}</code>
               </p>
               <a
-                href={`https://sepolia.etherscan.io/tx/${transactionHash}`}
+                href={`${getExplorerUrl()}/tx/${transactionHash}`}
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -287,28 +380,100 @@ function PaymentConfirmation() {
             </div>
           )}
 
+          {/* Affichage d'un avertissement réseau basé sur les données réelles */}
+          {isTestnet() && !isMainnet() && (
+            <div className="testnet-warning">
+              <h3>🚨 SEPOLIA TEST NETWORK</h3>
+              <p>This transaction uses test ETH with no real value.</p>
+              <p>
+                <strong>Network:</strong> {getNetworkDisplayName()}
+              </p>
+              <p>
+                <strong>Chain ID:</strong> {payment.chain_id || 11155111}
+              </p>
+              <p>
+                <strong>Debug:</strong> network={payment.network}, chain_id=
+                {payment.chain_id}
+              </p>
+            </div>
+          )}
+
+          {isMainnet() && !isTestnet() && (
+            <div
+              style={{
+                background: "rgba(239, 68, 68, 0.1)",
+                border: "2px solid rgba(239, 68, 68, 0.5)",
+                padding: "15px",
+                borderRadius: "8px",
+                margin: "20px 0",
+                textAlign: "center",
+              }}
+            >
+              <h3 style={{ color: "#ef4444", margin: "0 0 10px 0" }}>
+                ⚠️ ETHEREUM MAINNET
+              </h3>
+              <p>This transaction will use real ETH with real value!</p>
+              <p>
+                <strong>Network:</strong> {getNetworkDisplayName()}
+              </p>
+              <p>
+                <strong>Chain ID:</strong> {payment.chain_id || 1}
+              </p>
+            </div>
+          )}
+
+          {/* Debug information - remove in production */}
+          {process.env.NODE_ENV === "development" && (
+            <div
+              style={{
+                background: "rgba(255, 255, 0, 0.1)",
+                border: "1px solid rgba(255, 255, 0, 0.3)",
+                padding: "10px",
+                borderRadius: "4px",
+                margin: "10px 0",
+                fontSize: "0.8em",
+              }}
+            >
+              <strong>Debug Info:</strong>
+              <br />
+              Network: {payment?.network || "undefined"}
+              <br />
+              Chain ID: {payment?.chain_id || "undefined"}
+              <br />
+              Sender Chain: {payment?.sender_chain || "undefined"}
+              <br />
+              Is Testnet: {isTestnet().toString()}
+              <br />
+              Is Mainnet: {isMainnet().toString()}
+            </div>
+          )}
+
           <div className="payment-details">
-            <h3>📋 Détails de la transaction:</h3>
+            <h3>📋 Transaction details:</h3>
 
             <div className="payment-info">
               <div className="info-row">
-                <span>👤 Expéditeur:</span>
+                <span>👤 Sender:</span>
                 <span>{payment.sender_name}</span>
               </div>
               <div className="info-row">
-                <span>👤 Destinataire:</span>
+                <span>👤 Recipient:</span>
                 <span>{payment.recipient_name}</span>
               </div>
               <div className="info-row">
-                <span>💰 Montant:</span>
+                <span>💰 Amount:</span>
                 <span className="amount">
                   {payment.amount} {payment.currency}
-                  {payment.sender_chain.includes("Sepolia") && " (TEST)"}
+                  {isTestnet() && !isMainnet() && " (TEST)"}
+                  {isMainnet() && !isTestnet() && " (REAL)"}
                 </span>
               </div>
               <div className="info-row">
-                <span>⛓️ Réseau:</span>
-                <span>{payment.sender_chain}</span>
+                <span>🌐 Network:</span>
+                <span>
+                  {getNetworkDisplayName()}
+                  {payment.chain_id && ` (Chain ID: ${payment.chain_id})`}
+                </span>
               </div>
               <div className="info-row">
                 <span>📅 Date:</span>
@@ -317,20 +482,20 @@ function PaymentConfirmation() {
             </div>
 
             <div className="wallet-details">
-              <h4>💼 Adresses des wallets:</h4>
+              <h4>💼 Wallet addresses:</h4>
               <div className="wallet-address">
-                <strong>Expéditeur:</strong>
+                <strong>Sender:</strong>
                 <code>{payment.sender_wallet}</code>
               </div>
               <div className="wallet-address">
-                <strong>Destinataire:</strong>
+                <strong>Recipient:</strong>
                 <code>{payment.recipient_wallet}</code>
               </div>
             </div>
 
             {wallets.length > 0 && (
               <div className="user-wallets">
-                <h4>🔗 Vos wallets Privy connectés:</h4>
+                <h4>🔗 Your connected Privy wallets:</h4>
                 {wallets.map((wallet, index) => (
                   <div key={index} className="wallet-item">
                     <code>{wallet.address}</code>
@@ -339,7 +504,7 @@ function PaymentConfirmation() {
                       payment.sender_wallet.toLowerCase() && (
                       <span style={{ color: "#22c55e", fontWeight: "bold" }}>
                         {" "}
-                        ✅ Expéditeur
+                        ✅ Sender
                       </span>
                     )}
                   </div>
@@ -354,29 +519,42 @@ function PaymentConfirmation() {
               disabled={executing}
               className="confirm-button"
             >
-              {executing ? "🔄 Envoi via Privy..." : "💸 Envoyer le paiement"}
+              {executing
+                ? "🔄 Sending via Privy..."
+                : `💸 Send ${payment.amount} ${
+                    payment.currency
+                  } on ${getNetworkDisplayName()}`}
             </button>
 
             <button onClick={() => navigate("/")} className="cancel-button">
-              ❌ Annuler
+              ❌ Cancel
             </button>
           </div>
 
           <div className="warning">
             <p>
-              ⚠️ <strong>Important:</strong> Cette action enverra réellement{" "}
-              {payment.amount} {payment.currency} de votre wallet Privy vers le
-              destinataire. Assurez-vous d'avoir suffisamment de fonds.
+              ⚠️ <strong>Important:</strong> This action will actually send{" "}
+              {payment.amount} {payment.currency} from your Privy wallet to the
+              recipient on the <strong>{getNetworkDisplayName()}</strong>{" "}
+              network.
             </p>
             <p>
-              🔐 <strong>Privy:</strong> La transaction sera exécutée
-              directement via l'intégration Privy. Aucune configuration externe
-              n'est requise.
+              🔐 <strong>Privy:</strong> The transaction will be executed
+              directly via Privy integration. Your wallet will automatically
+              switch networks if necessary.
             </p>
-            {payment.sender_chain.includes("Sepolia") && (
+            {isTestnet() && !isMainnet() && (
               <p>
-                🚨 <strong>Testnet:</strong> Cette transaction utilisera le
-                réseau Sepolia Testnet avec des ETH de test.
+                🚨 <strong>Testnet:</strong> This transaction will use the
+                Sepolia Testnet network (Chain ID:{" "}
+                {payment.chain_id || 11155111}) with test ETH of no value.
+              </p>
+            )}
+            {isMainnet() && !isTestnet() && (
+              <p style={{ color: "#ef4444", fontWeight: "bold" }}>
+                💰 <strong>Mainnet:</strong> This transaction will use real ETH
+                on the main Ethereum network (Chain ID: {payment.chain_id || 1}
+                ). Make sure you have sufficient funds!
               </p>
             )}
           </div>
@@ -395,7 +573,7 @@ function PaymentConfirmation() {
             color: "#ef4444",
           }}
         >
-          <h4>❌ Erreur</h4>
+          <h4>❌ Error</h4>
           <p>{error}</p>
         </div>
       )}
